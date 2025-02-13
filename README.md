@@ -2,7 +2,7 @@
 
 This repository contains the code in both PyTorch and Jax for our paper.
 
-> [**Enhancing Cross-Layer Information Flow in Transformers with Multiway Dynamic Dense Connections**](https://arxiv.org)\
+> [**MUDDFormer: Breaking Residual Bottlenecks in Transformers via Multiway Dynamic Dense Connections**](https://arxiv.org)\
 > Da Xiao, Qingye Meng, Shengping Li, Xingyuan Yuan
 
 ![MUDDFormer](assets/MUDDFormer_arch.jpg "MUDDFormer")
