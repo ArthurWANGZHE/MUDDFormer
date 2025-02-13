@@ -1,22 +1,3 @@
-# MUDDFormer
-
-This folder contains pytorch implementations of MUDDPythia and MUDDFormer. We release model checkpoints of [(MUDDFormer-2.8B)](https://huggingface.co/Caiyun-AI/MUDDFormer-2.8B), [(MUDDPythia-1.4B)](https://huggingface.co/Caiyun-AI/MUDDPythia-1.4B) and [(MUDDPythia-2.8B)](https://huggingface.co/Caiyun-AI/MUDDPythia-2.8B) on Huggingface🤗.
-All of these models are pretrained on the Pile with 300B tokens. We propose MUltiway Dynamic Dense (MUDD) connections, a simple yet effective method to address the limitations of residual connections and enhance cross-layer information flow in Transformers. Please see downstrem evaluations and more details in the paper[(MUDDFormer: Breaking Residual Bottlenecks in Transformers via Multiway Dynamic Dense Connections)](https://arxiv.org). For training MUDDFormer efficiently, we provide Jax code in the [(jax folder)](https://github.com/Caiyun-AI/MUDDFormer/tree/main/jax).
-
-We recommend <strong>compiled version</strong> of MUDDFormer with *torch.compile* for inference acceleration. Please refer to Generation section for compile implementation.
-
-## Usage
-
-### Env
-
-```
-pip install transformers==4.35.0 torch==2.5.1
-```
-
-
-### Generation 
-
-```
 import time
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
@@ -40,12 +21,12 @@ if OPTIMIZED_COMPPILE:
     torch._inductor.config.triton.unique_kernel_names = True
     torch._inductor.config.fx_graph_cache = True
 
-tokenizer = AutoTokenizer.from_pretrained("Caiyun-AI/MUDDFormer-2.8B")
-model = AutoModelForCausalLM.from_pretrained("Caiyun-AI/MUDDFormer-2.8B", trust_remote_code=True)
+tokenizer = AutoTokenizer.from_pretrained("Caiyun-AI/MUDDPythia-1.4B")
+model = AutoModelForCausalLM.from_pretrained("Caiyun-AI/MUDDPythia-1.4B", trust_remote_code=True)
 
 _ = model.to(device=device,dtype=dtype)
 with torch.device(device):
-    model.setup_caches(max_batch_size=MAX_BATCH_SIZE, max_seq_length=MAX_SEQ_LENGTH, dtype=dtype)
+    model.setup_caches(max_batch_size=MAX_BATCH_SIZE, max_seq_length=MAX_SEQ_LENGTH,dtype=dtype)
 
 def decode_one_token(model, cur_token, input_pos):
     logits = model(cur_token, input_pos=input_pos, return_tensor=True)
@@ -67,4 +48,3 @@ for i in range(10):
             print(f'Generated text: {text}')
     t1 = time.time()
     print(f'Time consumed at iteration {i}: {t1-t0}s')
-```
