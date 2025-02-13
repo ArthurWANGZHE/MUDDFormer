@@ -454,6 +454,8 @@ class Decoder(nn.Module):
 
             if cfg.mudd_prenorm:
               y_normed = self.get_norm_layer(name=f"mudd_prenorm_{lyr}", cfg=cfg)(y)
+            else:
+              y_normed = y
             hids.append(y_normed)
 
             C = 1 if cfg.dynamic_dense_fix_last_layer and i == cfg.num_decoder_layers - 1 else len(cfg.dynamic_dense_type)
