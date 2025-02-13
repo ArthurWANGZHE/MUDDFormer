@@ -10,7 +10,7 @@ We recommend <strong>compiled version</strong> of MUDDFormer with *torch.compile
 ### Env
 
 ```
-pip install transformers==4.35.0 torch==2.5.1
+pip install transformers==4.40.2 torch==2.5.1 einops==0.8.0
 ```
 
 
