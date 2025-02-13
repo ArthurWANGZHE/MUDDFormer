@@ -30,9 +30,9 @@ MAX_BATCH_SIZE = 1
 MAX_SEQ_LENGTH = 2048
 NUM_TOKENS_TO_GENERATE = 10
 COMPILE = True
-OPTIMIZED_COMPPILE = False 
+OPTIMIZED_COMPILE = False 
 
-if OPTIMIZED_COMPPILE: 
+if OPTIMIZED_COMPILE: 
     import torch._dynamo.config
     import torch._inductor.config
     torch._dynamo.config.cache_size_limit = 64
