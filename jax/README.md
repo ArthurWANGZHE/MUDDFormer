@@ -19,7 +19,7 @@ jax==0.4.35
 - [Use Your Dataset](#Use-Your-Dataset)
 - [Tensorboard](#Tensorboard)
 - [Experiments](#Experiments)
-    - [410M MUDDFormer++ Vs Transformer++](#410M-DCFormer++-VS-Transformer++)
+    - [410M MUDDFormer Vs Transformer++](#410m-muddformer-vs-transformer)
     - [Other Results](#Other-Results)
 
 ## Getting Started
@@ -67,7 +67,7 @@ PIP_OR_PYTHON_PATH=...  # python or pip bin dir
 WORKDIR=... # worddir
 RUN_NAME=... # checkpoint and tensorboard save, it can be local dir or bucket dir(gs://...)
 DATASET_PATH=... # dataset path
-MODEL_NAME=... # train model class name, such as MUDDLlamaMedium, Llama2Medium
+MODEL_NAME=... # train model class name, such as MUDDLlama2Medium, Llama2Medium
 gcloud compute tpus tpu-vm ssh $TPU_NAME --zone=$ZONE --worker=all --command="export HARDWARE=tpu; cd $WORKDIR; $PIP_OR_PYTHON_PATH/python MaxText/train.py MaxText/configs/base_v2.yml run_name=$RUN_NAME dataset_path=$DATASET_PATH  model_name=$MODEL_NAME 2>&1| tee train.log" --project=$PROJECT_ID
 ```
 
@@ -81,7 +81,7 @@ PIP_OR_PYTHON_PATH=/home/xxx/python
 WORKDIR=/home/xxx/projects/muddformer/jax/
 RUN_NAME=$WORKDIR/output/
 DATASET_PATH=/data/
-MODEL_NAME=MUDDLlamaMedium
+MODEL_NAME=MUDDLlama2Medium
 gcloud compute tpus tpu-vm ssh $TPU_NAME --zone=$ZONE --worker=all --command="export HARDWARE=tpu; cd $WORKDIR; $PIP_OR_PYTHON_PATH/python MaxText/train.py MaxText/configs/base_v2.yml run_name=$RUN_NAME dataset_path=$DATASET_PATH  model_name=$MODEL_NAME hardware=tpu 2>&1| tee train.log" --project=$PROJECT_ID
 ```
 
@@ -95,7 +95,7 @@ PIP_OR_PYTHON_PATH=...  # python or pip bin dir
 WORKDIR=... # worddir
 RUN_NAME=... # checkpoint and tensorboard save, it can be local dir or bucket dir(gs://...)
 DATASET_PATH=... # dataset path
-MODEL_NAME=... # train model class name, such as MUDDLlamaMedium, Llama2Medium
+MODEL_NAME=... # train model class name, such as MUDDLlama2Medium, Llama2Medium
 $PIP_OR_PYTHON_PATH/python MaxText/train.py MaxText/configs/base_v2.yml run_name=$RUN_NAME dataset_path=$DATASET_PATH  model_name=$MODEL_NAME compile_topology_num_slices=1 2>&1| tee train.log" --project=$PROJECT_ID
 ```
 
@@ -105,7 +105,7 @@ PIP_OR_PYTHON_PATH=/home/xxx/python
 WORKDIR=/home/xxx/projects/muddformer/jax/
 RUN_NAME=$WORKDIR/output/
 DATASET_PATH=/data/
-MODEL_NAME=MUDDLlamaMedium
+MODEL_NAME=MUDDLlama2Medium
 $PIP_OR_PYTHON_PATH/python MaxText/train.py MaxText/configs/base_v2.yml run_name=$RUN_NAME dataset_path=$DATASET_PATH  model_name=$MODEL_NAME =1 hardware=gpu compile_topology_num_slices=1 2>&1| tee train.log"
 ```
 
@@ -122,12 +122,12 @@ tensorboad --logdir $RUN_NAME/tensorboard --bind_all --port 60000
 ```
 You can view training-related information by visiting the URL （the IP + port of the machine you are running tensoboard on） after successful run
     
-
 ## Experiments
 
-#### **410M MUDDFormer++ Vs Transformer++**
+#### **410M MUDDFormer Vs Transformer++**
 
-蓝线：MUDDFormer
+蓝线：MUDDFormer with prepostnorm
+
 橘线：Transformer++
 
 ![Loss曲线](assets/muddformer_vs_transformer++_loss.png)
