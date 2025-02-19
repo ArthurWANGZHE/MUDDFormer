@@ -1,7 +1,7 @@
 # MUDDFormer
 
 This folder contains pytorch implementations of MUDDPythia and MUDDFormer. We release model checkpoints of [(MUDDFormer-2.8B)](https://huggingface.co/Caiyun-AI/MUDDFormer-2.8B), [(MUDDPythia-1.4B)](https://huggingface.co/Caiyun-AI/MUDDPythia-1.4B) and [(MUDDPythia-2.8B)](https://huggingface.co/Caiyun-AI/MUDDPythia-2.8B) on Huggingface🤗.
-All of these models are pretrained on the Pile with 300B tokens. We propose MUltiway Dynamic Dense (MUDD) connections, a simple yet effective method to address the limitations of residual connections and enhance cross-layer information flow in Transformers. Please see downstrem evaluations and more details in the paper[(MUDDFormer: Breaking Residual Bottlenecks in Transformers via Multiway Dynamic Dense Connections)](https://arxiv.org). For training MUDDFormer efficiently, we provide Jax code in the [(jax folder)](https://github.com/Caiyun-AI/MUDDFormer/tree/main/jax).
+All of these models are pretrained on the Pile with 300B tokens. We propose MUltiway Dynamic Dense (MUDD) connections, a simple yet effective method to address the limitations of residual connections and enhance cross-layer information flow in Transformers. Please see downstrem evaluations and more details in the paper[(MUDDFormer: Breaking Residual Bottlenecks in Transformers via Multiway Dynamic Dense Connections)](https://arxiv.org/abs/2502.12170). For training MUDDFormer efficiently, we provide Jax code in the [(jax folder)](https://github.com/Caiyun-AI/MUDDFormer/tree/main/jax).
 
 We recommend <strong>compiled version</strong> of MUDDFormer with *torch.compile* for inference acceleration. Please refer to Generation section for compile implementation.
 
