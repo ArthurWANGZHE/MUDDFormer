@@ -30,6 +30,7 @@ from layers import normalizations
 from layers import models
 from layers import quantizations
 from layers import initializers  # XD
+from layers import mudd
 
 import common_types
 from typing import Optional
@@ -88,6 +89,7 @@ class LlamaDecoderLayer(nn.Module):
     
     factor = 1
     i = int(self.name.split('_')[-1])  # name=f"layers_{i}"
+    self.layer_inx = i
     C = 1 if cfg.dynamic_dense_fix_last_layer and i == cfg.num_decoder_layers-1 else len(cfg.dynamic_dense_type)
     dw_shape = (C, ((i + 1) * factor + 1))
     max_logging.log(f'dynamic_dense_hidden_expand-{i}: {cfg.dynamic_dense_hidden_expand[i]}')
@@ -143,10 +145,17 @@ class LlamaDecoderLayer(nn.Module):
       decoder_positions,
       deterministic,
       model_mode,
+      hids=None,
   ):
     cfg = self.config
     mesh = self.mesh
 
+    if self.config.mudd_in_layer:
+        if self.layer_inx == 0: # first layer
+            inputs = [inputs] * len(self.config.dynamic_dense_type)
+        else:
+            inputs, hids = mudd.Compose(self.config, self.mesh, self.quant, self.layer_inx-1, name=f'compose_{self.layer_inx-1}')(inputs, hids) # lsp
+    
     def norm(inputs, name_suffix=''):  # XD
         name = 'pre_self_attention_layer_norm' + name_suffix
         lnx = models.get_rmsnorm(name=name, cfg=cfg)(inputs)
@@ -227,13 +236,6 @@ class LlamaDecoderLayer(nn.Module):
         ("activation_batch", "activation_length", "activation_embed"),
     )
 
-    if cfg.dynamic_dense_type == 'qkvm': # XD lsp
-    #   dense_w_inner = self.dense_activation(self.dense_proj1(nn.RMSNorm(use_scale=use_scale)(layer_output)))
-      x_out_normed = self.pre_dense_proj1_norm(layer_output)
-      dense_w_inner = self.dense_activation(self.dense_proj1(x_out_normed))
-      dyn_dense_kernel_out = self.dense_proj2(dense_w_inner)
-      dyn_dense_w = dyn_dense_kernel_out + self.dense_proj2_bias.astype(dyn_dense_kernel_out.dtype) # dense_proj2_bias初始化出来时fp32
-
     # if cfg.record_internal_nn_metrics:
     #   self.sow("intermediates", "activation_mean", jnp.mean(layer_output))
     #   self.sow("intermediates", "activation_stdev", jnp.std(layer_output))
@@ -242,6 +244,18 @@ class LlamaDecoderLayer(nn.Module):
     #       "activation_fraction_zero",
     #       jnp.sum(layer_output == 0) / jnp.size(layer_output),
     #   )
+      
+    if self.config.mudd_in_layer:
+        if self.layer_inx == self.config.base_num_decoder_layers-1: # last layer
+            layer_output, hids = mudd.Compose(self.config, self.mesh, self.quant, self.layer_inx, name=f'compose_{self.layer_inx}')(layer_output, hids) # lsp
+        return layer_output, hids
+    else:
+        if cfg.dynamic_dense_type == 'qkvm': # XD lsp
+            x_out_normed = self.pre_dense_proj1_norm(layer_output)
+            dense_w_inner = self.dense_activation(self.dense_proj1(x_out_normed))
+            dyn_dense_kernel_out = self.dense_proj2(dense_w_inner)
+            dyn_dense_w = dyn_dense_kernel_out + self.dense_proj2_bias.astype(dyn_dense_kernel_out.dtype) # dense_proj2_bias初始化出来时fp32
+     
 
     if cfg.scan_layers:
       return layer_output, None

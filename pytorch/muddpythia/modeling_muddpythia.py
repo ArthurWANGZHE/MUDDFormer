@@ -84,7 +84,6 @@ class MUDDPythia(PreTrainedModel):
 
         self.layer_cache = None
         self.use_layer_cache = False if self.is_training else self.config.use_layer_cache
-        self.stack_hidden = self.config.stack_hidden
         self.dynamic = self.config.dynamic_dense
         self.dense = self.config.dense
         if self.dynamic:
@@ -166,11 +165,11 @@ class MUDDPythia(PreTrainedModel):
                 _hidden = self.layer_cache.update(x, i+1) # LBTD
             else:
                 hiddens.append(x)
-                _hidden = hiddens if not self.stack_hidden else hiddens
+                _hidden = torch.stack(hiddens)
             if self.dynamic and self.dense:
                 dw = self.dynamic_dense[i](x) # BTD -> CBTL
                 dw = dw + self.dense_bs[i][:,None,None,:] # CBTL
-                if self.stack_hidden:
+                if seqlen > 1:
                     x = torch.einsum('LBTD, CBTL -> CBTD', _hidden, dw)
                 else:
                     x = self.dynamic_dense[i].layer_mix(_hidden, dw)
@@ -206,7 +205,7 @@ class TransformerBlock(nn.Module):
             normed_x = self.attention_norm(x)
         elif self.config.dense_type == 'qkvr':
             res = x[-1] # for mlp
-            if self.config.stack_hidden or not self.config.sepln:
+            if not self.config.sepln:
                 normed_x = self.attention_norm(x[:3])
             else:
                 normed_x = tuple([norm_fn(_x) for norm_fn, _x in zip(self.attention_norms, x[:3])])
@@ -258,10 +257,7 @@ class Attention(nn.Module):
         if self.lidx == 0 or self.config.dense_type == 'l' or not self.config.dense:
             bsz, seqlen, _ = x.shape
         else:
-            if self.config.stack_hidden:
-                C, bsz, seqlen, _ = x.shape
-            else:
-                C, (bsz, seqlen, _) = len(x), x[0].shape
+            C, (bsz, seqlen, _) = len(x), x[0].shape
         kv_size = self.n_local_heads * self.head_dim
 
         if self.config.dense_type == 'l' or not self.config.dense:
