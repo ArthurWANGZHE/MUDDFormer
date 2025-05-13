@@ -25,7 +25,6 @@
   "rope_base": 10000,
   "round64": true,
   "sepln": true,
-  "stack_hidden": false,
   "tie_word_embeddings": false,
   "torch_dtype": "bfloat16",
   "transformers_version": "4.35.0",

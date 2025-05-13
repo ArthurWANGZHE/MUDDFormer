@@ -31,7 +31,6 @@ class MUDDPythiaConfig(PretrainedConfig):
         eos_token_id: int =2,
         tie_word_embeddings: bool =False,
         use_layer_cache: bool = True,
-        stack_hidden: bool = False,
         dense: bool = True,
         dynamic_dense: bool = True,
         sepln: bool = True,
@@ -58,7 +57,6 @@ class MUDDPythiaConfig(PretrainedConfig):
         self.rotary_pct = rotary_pct
 
         self.use_layer_cache= use_layer_cache
-        self.stack_hidden= stack_hidden
         self.dense= dense
         self.dynamic_dense= dynamic_dense
         self.sepln= sepln
