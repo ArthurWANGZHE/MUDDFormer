@@ -56,6 +56,7 @@ class MUDDLlama2Medium(LlamaMedium):
     ddw_gen_chunk_size = None
     mudd_prenorm = True
     mudd_postnorm = True
+    mudd_in_layer = True
     dynamic_mlp_dim = True # if true: [round( default_dim* (i/(num_layers-1) +0.5) / 128) * 128 for i in range(num_layers)] 
     # opt
     learning_rate_schedule_steps = 13500
@@ -82,6 +83,7 @@ class MUDDLlama2Medium(LlamaMedium):
     dataset_type = 'pile'
     vocab_size = 50432
     enable_checkpointing = True
+    record_internal_nn_metrics=0
 
 class Llama2Medium(LlamaMedium):
     

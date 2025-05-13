@@ -51,3 +51,21 @@ class RMSNorm(nn.Module):
 
     scale = jnp.asarray(scale, self.dtype)
     return y * scale
+
+def get_rmsnorm(name, cfg=None, **kwargs):
+  if cfg is None:
+    dtype = kwargs.get('dtype', jnp.bfloat16)
+    weight_dtype = kwargs.get('weight_dtype', jnp.float32)
+    epsilon = kwargs.get('normalization_layer_epsilon', 1.e-6)
+  else:
+    dtype = getattr(cfg, 'dtype', jnp.bfloat16)
+    weight_dtype = getattr(cfg, 'weight_dtype', jnp.float32)
+    epsilon = getattr(cfg, 'normalization_layer_epsilon', 1.e-6)
+  scale_init = kwargs['scale_init'] if 'scale_init' in kwargs else nn.initializers.ones
+  # max_logging.log(f'\nnorm name: {name} dtype: {dtype} weight_dtype: {weight_dtype} epsilon: {epsilon} scale_init: {scale_init}\n')
+  return RMSNorm(name=name,
+                dtype=dtype,
+                weight_dtype=weight_dtype,
+                epsilon=epsilon,
+                kernel_axes=("norm",),
+                scale_init=scale_init) # use scale default is true.

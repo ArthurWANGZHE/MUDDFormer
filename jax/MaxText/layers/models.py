@@ -31,6 +31,7 @@ from layers import embeddings
 from layers import linears
 from layers import normalizations, quantizations
 from layers import pipeline
+from layers import mudd
 import max_logging
 
 
@@ -347,7 +348,10 @@ class Decoder(nn.Module):
         y_normed = self.get_norm_layer(name="mudd_prenorm", cfg=cfg)(y)
       else:
         y_normed = y
-      y, hids = [y] * len(cfg.dynamic_dense_type), [y_normed]  # XD
+      if cfg.mudd_in_layer:
+        y, hids = y, [y_normed]
+      else:
+        y, hids = [y] * len(cfg.dynamic_dense_type), [y_normed]
 
     BlockLayer = self.get_decoder_layer()
 
@@ -437,52 +441,13 @@ class Decoder(nn.Module):
               decoder_positions,
               deterministic,
               model_mode,
+              hids=hids,
           )
-          if getattr(cfg, 'dense_conn', False):  # XD
-            max_logging.log(f'dense_conn is true')
-            i = lyr  # to be compatible with pax code
-            y, dyn_dense_w = y  # unpack tuple
-            max_logging.log(f'dyn_dense_w dtype: {dyn_dense_w.dtype}')
-            
-            if self.config.record_internal_nn_metrics:
-              self.sow('intermediates', f'dyn_dense_w/max/layer_{lyr}', jnp.max(dyn_dense_w))
-              self.sow('intermediates', f'dyn_dense_w/mean/layer_{lyr}', jnp.mean(dyn_dense_w))
-              self.sow('intermediates', f'dyn_dense_w/min/layer_{lyr}', jnp.min(dyn_dense_w))
-              self.sow('intermediates', f'dyn_dense_w/norm/layer_{lyr}', l2norm(dyn_dense_w))
-              self.sow('intermediates', f'dyn_dense_w/std/layer_{lyr}', jnp.std(dyn_dense_w))
-              self.sow('intermediates', f'layer_output/norm/layer_{lyr}', l2norm(y))
-
-            if cfg.mudd_prenorm:
-              y_normed = self.get_norm_layer(name=f"mudd_prenorm_{lyr}", cfg=cfg)(y)
-            else:
-              y_normed = y
-            hids.append(y_normed)
-
-            C = 1 if cfg.dynamic_dense_fix_last_layer and i == cfg.num_decoder_layers - 1 else len(cfg.dynamic_dense_type)
-            dyn_dense_w = rearrange(dyn_dense_w, 'B T C L -> C B T L 1', C=C)
-            factor = 1
-            hid_idxs = list(range((i+1) * factor + 1)) # L+1
-            if cfg.ddw_gen_pattern == 'q,k,v,m':
-              max_logging.log(f'ddw_gen_pattern: {cfg.ddw_gen_pattern} mudd_postnorm is {cfg.mudd_postnorm}....')
-              if cfg.mudd_postnorm:
-                post_norm = self.get_norm_layer(name=f"mudd_postnorm_{lyr}", cfg=cfg, scale_init=jax.nn.initializers.constant(0.001))
-                y = tuple([y + (post_norm(
-                    wsum(dyn_dense_w[cidx: cidx + 1], hids, cfg.ddw_gen_chunk_size).squeeze(0)
-                                          ) if cidx == C - 1 else 
-                    wsum(dyn_dense_w[cidx: cidx + 1], hids, cfg.ddw_gen_chunk_size).squeeze(0)
-                                ) for cidx in range(C)])
-              else:
-                y = tuple([wsum(dyn_dense_w[cidx: cidx + 1], hids, cfg.ddw_gen_chunk_size).squeeze(0) for cidx in range(C)]) # (btl, btl, btl, btl)
-            elif cfg.ddw_gen_pattern == 'qkvm':
-              y = wsum(dyn_dense_w, hids, cfg.ddw_gen_chunk_size) # cbtl
-            elif cfg.ddw_gen_pattern == 'qk,vm':
-              yqk = wsum(dyn_dense_w[ :2], hids, cfg.ddw_gen_chunk_size) # cbtl
-              yvm = wsum(dyn_dense_w[2: ], hids, cfg.ddw_gen_chunk_size) # cbtl
-              y = jnp.concatenate([yqk, yvm], axis=0)
-            
-        if getattr(cfg, 'dense_conn', False):  # XD
-          y = y[0] # if cfg.dynamic_dense_fix_last_layer else x_out[1]
-
+          if self.config.mudd_in_layer:
+            y, hids = y
+          if not self.config.mudd_in_layer:
+            y, hids = mudd.Compose(cfg, mesh, self.quant, lyr, name=f'compose_{lyr}')(y, hids) # lsp
+        
     y = self.get_norm_layer(name="decoder_norm", cfg=cfg)(y)
     y = nn.Dropout(rate=cfg.dropout_rate, broadcast_dims=(-2,))(y, deterministic=deterministic)
 
