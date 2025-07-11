@@ -33,7 +33,8 @@ def decode_one_token(model, cur_token, input_pos):
     new_token = torch.argmax(logits[:, -1], dim=-1)[:,None]
     return new_token
 
-prompt = "Beijing is the capital of China. London is the capital of"
+# prompt = "Beijing is the capital of China. London is the capital of"
+prompt = "He is "
 input_ids = tokenizer.encode(prompt, return_tensors='pt')
 
 compiled_decode_one_token = torch.compile(decode_one_token,mode="reduce-overhead", fullgraph=True) if COMPILE else None
@@ -42,7 +43,10 @@ print('Start generating tokens, but it will take a few minutes to compile at the
 for i in range(10):
     t0 = time.time()
     with torch.no_grad():
-        generated_ids = model.generate(input_ids.to(device),num_tokens_to_generate=NUM_TOKENS_TO_GENERATE, compiled_decode_one_token=compiled_decode_one_token)
+        generated_ids = model.generate(
+            input_ids.to(device),
+            num_tokens_to_generate=NUM_TOKENS_TO_GENERATE
+        )
         text = tokenizer.decode(generated_ids[0])
         if i ==0:
             print(f'Generated text: {text}')
